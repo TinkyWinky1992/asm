@@ -221,7 +221,7 @@ void printInstructionTable() {
     printf("\n==== CI MEMOY(%d used) ====\n", CI_index);
     for(int i = 0; i < CI_index; i++) {
         Instruction *inst = &CI_memory[i];
-        printf("[%d] %s %s , %s\n", MAX_DC_INDEX + i, inst->opcode.name, inst->src.name, inst->dist.name);
+        printf("[%d] %s %s %s , %s\n", MAX_DC_INDEX + i ,inst->name ,inst->opcode.name, inst->src.name, inst->dist.name);
     }
     printf("----------------------\n");
 

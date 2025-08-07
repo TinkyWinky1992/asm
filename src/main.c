@@ -84,7 +84,7 @@ void RegisterLine(char* line, FILE *file) {
         //printf("Parsed word: \"%s\"\n", word);
 
         // Now handle word logic
-        printf("word: %s\n", word);
+        //printf("word: %s\n", word);
         if (isSymbol(word) == 1) {
           //  printf("Detected symbol: %s\n", word);
           buildSymbolTable(word, file, line);
@@ -95,12 +95,6 @@ void RegisterLine(char* line, FILE *file) {
             
            // printMacroTable();
         }
-        
-        else if (isLabel(word) == 1) {
-          //  printf("Detected label: %s\n", word);
-           // buildLabelTable(word, file, line);
-        }
-       
         else if (isCommand(word)== 1 ) {
 
           printf("Detected command: %s\n", word);

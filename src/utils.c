@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "./parser/parser.h"
 #define MAX_TOKENS 4
 #define MAX_TOKEN_SYMBOL 3
 
@@ -162,3 +163,27 @@ void skipping_label(char **line, const char *word) {
     }
 }
 
+SymbolType getSymbolType(const char *typeStr) {
+    if (strcmp(typeStr, ".code") == 0) {
+        return SYMBOL_CODE;
+    } else if (strcmp(typeStr, ".data") == 0) {
+        return SYMBOL_DATA;
+    } else if (strcmp(typeStr, ".entry") == 0) {
+        return SYMBOL_ENTRY;
+    } else if (strcmp(typeStr, ".extern") == 0) {
+        return SYMBOL_EXTERN;
+    } else if (strcmp(typeStr, ".string") == 0) {
+        return SYMBOL_STRING;
+    } else if (strcmp(typeStr, ".metrix") == 0) {
+        return SYMBOL_METRIX;
+    }
+    return -1; // Invalid type
+}
+
+void toBinary(int value, char *out) {
+    for (int i = 7; i >= 0; i--) {
+        out[i] = (value & 1) ? '1' : '0';
+        value >>= 1;
+    }
+    out[8] = '\0'; // End of string
+}

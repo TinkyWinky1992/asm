@@ -24,6 +24,7 @@ typedef struct operand
 
 typedef struct Instruction {
 
+    char name[MAX_LABEL_LEN];
     Opcode opcode;
     Operand src;
     Operand dist;

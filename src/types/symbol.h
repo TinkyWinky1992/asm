@@ -15,10 +15,13 @@ typedef enum {
 
 
 typedef struct {
-    char name[MAX_LABEL_LEN]; // לדוגמה: "MAIN"
-    int address;              // כתובת בזיכרון (IC או DC)
-    SymbolType type;          // סוג הסמל
-    int isExternal;           // 1 אם מוגדר כ .extern
-    int isEntry;              // 1 אם הוגדר כ .entry
+    char name[MAX_LABEL_LEN];
+    int address;              
+    SymbolType type;          
+    int isExternal;       
+    int isEntry;           
+    char *values;      
 } Symbol;
 #endif
+
+
