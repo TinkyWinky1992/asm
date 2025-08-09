@@ -7,14 +7,19 @@
 #define MAX_MACROS 100
 int DC_index = 0;
 int CI_index = 0;
+int entry_index = 0;
+int extern_index = 0;
 MainMemory memory = {CI_memory, DC_memory , MAX_CI_INDEX, MAX_DC_INDEX, MAX_MEMORY};
 Symbol DC_memory[MAX_MEMORY_CI_CD];
 Instruction CI_memory[MAX_MEMORY_CI_CD];
 Macro macro_table[MAX_MACROS];
+Symbol entry_memory[MAX_MEMORY_CI_CD];
+Symbol extern_memory[MAX_MEMORY_CI_CD];
 
 char *symbolTypes_table[] = {
     ".entry", ".mat", ".data", ".extern", ".string"
 };
+
 
 Operand operands_table[MAX_OPERAND] = {
     {"r0", 0, "000"},
@@ -25,7 +30,7 @@ Operand operands_table[MAX_OPERAND] = {
     {"r5", 5, "101"},
     {"r6", 6, "110"},
     {"r7", 7, "111"},
-    {"ud", -999, "-000"},
+    {"ud", -999, "000"},
 
 };
 
@@ -40,7 +45,7 @@ Opcode opcode_table[MAX_OPCODE] = {
     {"inc", 7, "0111", 1},
     {"dec", 8, "1000", 1},
     {"jmp", 9, "1001", 1},
-    {"bne", 10, "1010", -1},
+    {"bne", 10, "1010", 1},
     {"red", 11, "1011", 1},
     {"prn", 12, "1100", 1},
     {"jsr", 13, "1101", 1},
@@ -72,7 +77,9 @@ int isSymbol(char* word) {
 
 //checking for a Instruction 
 int isCommand(char* word) {
+            
     for (int i = 0; i < MAX_OPCODE; i++) {
+        //printf("size %d", sizeof(word));
         if (strcmp(word, opcode_table[i].name) == 0)
             return 1;
     }
@@ -221,8 +228,38 @@ void printInstructionTable() {
     printf("\n==== CI MEMOY(%d used) ====\n", CI_index);
     for(int i = 0; i < CI_index; i++) {
         Instruction *inst = &CI_memory[i];
-        printf("[%d] %s %s %s , %s\n", MAX_DC_INDEX + i ,inst->name ,inst->opcode.name, inst->src.name, inst->dist.name);
+        char *src_name;
+        char *dist_name;
+        //printf("checler: %s\n", inst->src.name);
+        if (inst->src_label != NULL)
+            src_name = strdup(inst->src_label);
+        else if (inst->src.name != NULL)
+            src_name = strdup(inst->src.name);
+        else
+            src_name = strdup("???");
+
+
+        if (inst->dist_label != NULL)
+            dist_name = strdup(inst->dist_label);
+        else if (inst->dist.name != NULL)
+            dist_name = strdup(inst->dist.name);
+        else
+            dist_name = strdup("???");
+
+        printf("[%d] %s %s %s , %s\n", MAX_DC_INDEX + i ,inst->name ,inst->opcode.name, src_name, dist_name);
+        free(src_name);
+        free(dist_name);
     }
     printf("----------------------\n");
 
+}
+
+
+void printSymbolsTable() {
+    printf("\n==== DC MEMOY(%d used) ====\n", DC_index);
+    for(int i = 0; i < DC_index; i++) {
+        Symbol *sym = &DC_memory[i];
+        printf("[%d] %s %d %s\n", i ,sym->name ,sym->address, sym->values);
+    }
+    printf("----------------------\n");
 }

@@ -7,18 +7,25 @@
 #define MAX_TOKEN_SYMBOL 3
 
 char **split_instruction_symbol(const char *input,int* outSize) {
+    printf("check: %s\n", input);
     char** result = malloc(MAX_TOKEN_SYMBOL * sizeof(char*));
     *outSize = 0;
 
     char* line = strdup(input);  // modifiable copy
 
-    // 1. Extract name (before ':')
-    char* colon = strchr(line, ':');
+    // extract name
+    char* colon = strchr(line, ' ');
     if (!colon) {
+        printf("Error: No colon found in input.\n");
         free(line);
         return NULL;
     }
+
     *colon = '\0';
+    size_t len = strlen(line);
+    if (len > 0 && line[len - 1] == ':') {
+        line[len - 1] = '\0';  // strip the colon
+    }
     result[0] = strdup(line);  // name
     (*outSize)++;
 
@@ -64,7 +71,6 @@ char **split_instruction_opcode(const char *line) {
     int count = 0;
     const char *delimiters = " ,";
 
-    // Make a modifiable copy of the input
     char *line_copy = strdup(line);
     if (!line_copy) {
         free(tokens);
@@ -73,22 +79,29 @@ char **split_instruction_opcode(const char *line) {
 
     char *token = strtok(line_copy, delimiters);
     while (token != NULL && count < MAX_TOKENS) {
-        tokens[count] = strdup(token); // Duplicate the token
+        // If token contains '[', truncate at that point
+        char *bracket_pos = strchr(token, '[');
+        if (bracket_pos) {
+            *bracket_pos = '\0'; // Cut string at first '['
+        }
+
+        tokens[count] = strdup(token); // Save clean token
         if (!tokens[count]) {
-            // On failure, clean up
             for (int i = 0; i < count; i++) free(tokens[i]);
             free(tokens);
             free(line_copy);
             return NULL;
         }
+
         count++;
         token = strtok(NULL, delimiters);
     }
 
-    tokens[count] = NULL; // Null-terminate the array
+    tokens[count] = NULL;
     free(line_copy);
     return tokens;
 }
+
 
 // skipping spaces in the line
 int SkippingSpaces(int start, char* line ) {
@@ -104,6 +117,7 @@ void toLowerCase(char* str) {
         str[i] = tolower((unsigned char)str[i]);
     }
 }
+
 
 // checking for numbers
 int isAlphaOrNum(char c) {
@@ -180,10 +194,202 @@ SymbolType getSymbolType(const char *typeStr) {
     return -1; // Invalid type
 }
 
-void toBinary(int value, char *out) {
-    for (int i = 7; i >= 0; i--) {
-        out[i] = (value & 1) ? '1' : '0';
-        value >>= 1;
+
+
+char *findSymbolname(char * var) {
+    char * result;
+    for(int j = 0; j < 5; j++) {
+               //printf("instertion: %s\n", symbolTypes_table[j]);  
+        if (symbolTypes_table[j] == NULL) {
+          //  printf("Warning: symbolTypes_table[%d] is NULL\n", j);
+            continue;
+        }
+    
+        //printf("vtext: %d\n", strcmp(Instruction_symbol_list[1], symbolTypes_table[j]));    
+        if(strcmp(var, symbolTypes_table[j]) == 0) {
+          //printf("type: %s", symbolTypes_table[j]);
+
+                result = strdup(symbolTypes_table[j]);
+                //printf("type: %s", symbol_type);
+                break;
+            }
+                
     }
-    out[8] = '\0'; // End of string
+    return result;
+}
+char* convertToBase4(int num) {
+    // handle zero case
+    if (num == 0) {
+        char* zeroStr = (char*)malloc(2);
+        strcpy(zeroStr, "0");
+        return zeroStr;
+    }
+
+    char buffer[33]; // enough for 32-bit integers
+    int i = 0;
+
+    // convert number to base 4
+    while (num > 0) {
+        buffer[i++] = (num % 4) + '0';  // Convert digit to character
+        num /= 4;
+    }
+
+    // Allocate memory for result string
+    char* result = (char*)malloc(i + 1);
+    if (!result) return NULL;
+
+    // Reverse the digits into result
+    for (int j = 0; j < i; j++) {
+        result[j] = buffer[i - j - 1];
+    }
+    result[i] = '\0';
+
+    return result;
+}
+
+char *intToBinary(int num) {
+    // Allocate enough space for 32 bits + null terminator
+    int totalBits = sizeof(char) * 10;
+    char *output = malloc(totalBits + 1); // +1 for null terminator
+    if (!output) {
+        perror("Memory allocation failed");
+        return NULL;
+    }
+
+    unsigned int uNum = (unsigned int) num; // use unsigned to preserve 2's complement
+
+    for (int i = totalBits - 1; i >= 0; --i) {
+        output[totalBits - 1 - i] = ((uNum >> i) & 1) + '0';
+    }
+
+    output[totalBits] = '\0'; // null-terminate
+
+    return output;
+}
+char *padTo10Bits(const char *binary) {
+    size_t len = strlen(binary);
+    if (len >= 10) {
+        return strdup(binary);  // already valid
+    }
+
+    char *padded = malloc(11); // 10 bits + null terminator
+    if (!padded) {
+        perror("Failed to allocate padded binary");
+        exit(1);
+    }
+
+    // Fill with '0's
+    memset(padded, '0', 10);
+    // Copy the original binary to the end
+    strcpy(padded + (10 - len), binary);
+    padded[10] = '\0';
+
+    return padded;
+}
+
+int isOperandValid(char *var) {
+    for (int i = 0; i < MAX_OPERAND; i++) {
+        if (strcmp(var,operands_table[i].name ) == 0) {
+            return 1; // Operand is valid
+        }
+    }
+    return 0; // Operand is not valid
+}
+
+
+char *ExtractBinary(char *label, Operand temp) {
+    //printf("temp : %s %d %s\n ",temp.name, temp.value, temp.binary);
+    char *binary = NULL;
+    int found = 0;
+    int labelAddr = 0;
+
+
+        if(label != NULL && strlen(label) > 0) {
+        // Search for the label in DC_memory
+        int found = 0;
+        for (int i = 0; i < DC_index; i++) {
+            if ( DC_memory[i].name != NULL && strcmp(DC_memory[i].name,label) == 0) {
+                labelAddr = i;
+                found = 1;
+                break;
+            }
+        }
+
+        if(!found) {
+            for (int i = 0; i < CI_index; i++) {
+                if (CI_memory[i].name != NULL && strcmp(CI_memory[i].name, label) == 0) {
+                    labelAddr = i + MAX_DC_INDEX;
+                    found = 1;
+                    break;
+                }
+            }
+        }
+
+        if (!found) {
+            printf("Error: Label '%s' not found for SRC operand.\n", label);
+            exit(1);
+        }
+
+        
+        binary = intToBinary(labelAddr);
+       
+        
+    }
+    else if(temp.value == -999) {
+        binary = NULL;
+        
+    }   
+
+    
+    else {
+
+        binary = strdup(temp.binary);
+        
+    }
+        
+   // printf("addr %s\n", binary);
+    return binary;
+
+}
+
+
+char **ExtractBinaryValuesWithExtra(Instruction *p) {
+   // printf("name of opcode: %s\n", p->opcode.name);
+
+    char *opcodeBin = strdup(p->opcode.binary);
+    if (!opcodeBin) {
+        perror("Failed to allocate opcode binary");
+        exit(1);
+    }
+
+    char *srcbin = ExtractBinary(p->src_label, p->src);
+    char *distbin = ExtractBinary(p->dist_label, p->dist);
+    //printf("checking element: %s %s\n", srcbin ? srcbin : "(null)", distbin ? distbin : "(null)");
+
+    int count = 1;  // opcodeBin is always present
+    if (srcbin) count++;
+    if (distbin) count++;
+
+    char **binaryWords = malloc((count + 1) * sizeof(char *));
+    if (!binaryWords) {
+        perror("Failed to allocate binaryWords array");
+        exit(1);
+    }
+
+    int index = 0;
+    binaryWords[index++] = padTo10Bits(opcodeBin);
+    free(opcodeBin);
+
+    if (srcbin != NULL) {
+        binaryWords[index++] = padTo10Bits(srcbin);
+        free(srcbin);
+    }
+    if (distbin != NULL) {
+        binaryWords[index++] = padTo10Bits(distbin);
+        free(distbin);
+    }
+
+    binaryWords[index] = NULL;
+
+    return binaryWords;
 }

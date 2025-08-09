@@ -9,8 +9,13 @@ int isAlphaOrNum(char c);
 int isAlpha(char c);
 void extractMcroName(char *line, char *macroName);
 void skipping_label(char *line, char *word);
+int isOperandValid(char *var);
 char **split_instruction_opcode(const char *line);
 char **split_instruction_symbol(const char *line,int* outSize);
+char* intToBinary(int num);
+char* convertToBase4(int num);
 SymbolType getSymbolType(const char *typeStr);
-void toBinary(int value, char *out);
+char * findSymbolname(char * var);
+char *padTo10Bits(const char *binary);
+char **ExtractBinaryValuesWithExtra(Instruction *p);
 #endif // UTILS_H

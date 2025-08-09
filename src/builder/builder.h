@@ -6,6 +6,4 @@
 
 void buildCommandTable(char* word, FILE *file, char *line);
 void buildSymbolTable(char* word, FILE *file, char *line);
-void buildMacroTable(char* word, FILE *file, char *line);
-void buildLabelTable(char* word, FILE *file, char *line);
 #endif // BUILDER_H

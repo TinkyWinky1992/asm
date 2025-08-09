@@ -8,30 +8,33 @@ typedef struct opcode
     
     char *name;
     int opcodeValue;
-    char binary[4];
+    char binary[5];
     int isOneOp;
 
 }Opcode;
  
 typedef struct operand
 {
-    char name[2];
+    char *name;
     int value;    
-    char binary[3];
+    char *binary;
   
 
 } Operand;
 
+
 typedef struct Instruction {
 
-    char name[MAX_LABEL_LEN];
+    char *name;
     Opcode opcode;
+    char *src_label;
+    char *dist_label;
     Operand src;
     Operand dist;
     int lineNumber;
 
 } Instruction;
-#endif
+
 
 typedef struct MainMemory
 {
@@ -43,5 +46,5 @@ typedef struct MainMemory
 
 }MainMemory;
 
-
+#endif
 

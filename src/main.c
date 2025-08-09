@@ -4,6 +4,7 @@
 #include "./utils.h"
 #include "./builder/builder.h"
 #include <string.h>
+#include "./output/output.h"
 
 #define MAX_LlINE 128
 #define MAX_WORD_LENGTH 100
@@ -47,20 +48,17 @@ char *read_line(FILE* file) {
 
 
 void RegisterLine(char* line, FILE *file) {
-    if (line == NULL) {
-        printf("Error: line is NULL\n");
-        return;
-    }
 
     int i = 0;
     int word_start = 0;
     char word[MAX_WORD_LENGTH];
 
     while (line[i] != '\0') {
+        
         // Skip any leading spaces
         i = SkippingSpaces(i, line);
         if (line[i] == '\0') break;
-
+       // printf("line in registerline: %s\n", line);
         // Mark start of the word
         word_start = i;
 
@@ -84,20 +82,16 @@ void RegisterLine(char* line, FILE *file) {
         //printf("Parsed word: \"%s\"\n", word);
 
         // Now handle word logic
-        //printf("word: %s\n", word);
-        if (isSymbol(word) == 1) {
-          //  printf("Detected symbol: %s\n", word);
-          buildSymbolTable(word, file, line);
-        }
-        else if(isMacro(word, file, line) == 1) {
-            buildMacroTable(word, file, line);
-            printMacroTable();
-            
-           // printMacroTable();
-        }
-        else if (isCommand(word)== 1 ) {
+         //converting the line to lower case
 
-          printf("Detected command: %s\n", word);
+        toLowerCase(line);
+        if (isSymbol(word) == 1)
+          buildSymbolTable(word, file, line);
+        
+        else if(isMacro(word, file, line) == 1)
+                printMacroTable();
+        else if (isCommand(word)== 1 ) {
+         
           buildCommandTable(word, file, line);
 
         }
@@ -112,25 +106,58 @@ void RegisterLine(char* line, FILE *file) {
     }
 }
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <ctype.h>
+
+// Function to check if a filename ends with ".as"
+int ends_with_as(const char *filename) {
+    size_t len = strlen(filename);
+    if (len < 3) return 0;
+    const char *ext = filename + len - 3; // Get the last three characters
+    return (tolower(ext[0]) == '.' && tolower(ext[1]) == 'a' && tolower(ext[2]) == 's');
+}
 
 int main(int argc, char *argv[]) {
-    FILE *fptr = fopen("src/test.asm", "r");
-    if (!fptr) {
-        printf("Could not open file\n");
-        return -1;
+    struct dirent *entry;
+    DIR *dir = opendir("tests");
+
+    if (!dir) {
+        perror("Could not open TEST directory");
+        return 1;
     }
 
-    char* line;
-    
-    while ((line = read_line(fptr)) != NULL) {
-       // printf("line: %s\n", line);  // Optional debug print
+    while ((entry = readdir(dir)) != NULL) {
+        if (ends_with_as(entry->d_name)) {
+            char filepath[512];
+            snprintf(filepath, sizeof(filepath), "tests/%s", entry->d_name);
 
-        RegisterLine(line, fptr);    // Process the line
+            printf("Processing file: %s\n", filepath);
 
-        free(line);  // Free the memory allocated in read_line
+            FILE *fptr = fopen(filepath, "r");
+            if (!fptr) {
+                perror("Error opening file");
+                continue;
+            }
+
+            char *line;
+            while ((line = read_line(fptr)) != NULL) {
+                RegisterLine(line, fptr);
+                free(line);
+            }
+
+            fclose(fptr);
+
+            // After processing the file, generate output files
+            entryToFile();
+            externToFile();
+            ObMemoryToFile();
+        }
     }
 
-    fclose(fptr);
+    closedir(dir);
     return 0;
 }
 

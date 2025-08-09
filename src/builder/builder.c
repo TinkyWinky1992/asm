@@ -5,69 +5,52 @@
 #include "../store/store.h"
 #include "../utils.h"
 
-//void 
-
-void buildMacroTable(char* word, FILE *file, char *line) {
-
-
-}
-
 void buildSymbolTable(char* word, FILE *file, char *line) {
-    char *ptrline = line;
-    //printf("good?: %s\n",ptrline);
-
-
+    char *ptrline = line; 
     int len = 0;
     char **Instruction_symbol_list = split_instruction_symbol(ptrline, &len);
-
-    
-    
-    char *name = strdup(Instruction_symbol_list[0]);
-    char *symbol_type = NULL;
+    char *var = NULL;
+    char *var2 = NULL;
     char *values = NULL;
-    // printf("length: %d\n", len);
-    for(int j = 0; j < 5; j++) {
-               //printf("instertion: %s\n", symbolTypes_table[j]);  
-        if (symbolTypes_table[j] == NULL) {
-          //  printf("Warning: symbolTypes_table[%d] is NULL\n", j);
-            continue;
-        }
-    
-        //printf("vtext: %d\n", strcmp(Instruction_symbol_list[1], symbolTypes_table[j]));    
-        if(strcmp(Instruction_symbol_list[1], symbolTypes_table[j]) == 0) {
-          //printf("type: %s", symbolTypes_table[j]);
 
-                symbol_type = strdup(symbolTypes_table[j]);
-                //printf("type: %s", symbol_type);
-                break;
-            }
-                
+    //checking if it a symbol of extern or entry
+    if(strchr(Instruction_symbol_list[0], '.')) {
+        var = findSymbolname(Instruction_symbol_list[0]);
+        var2 = strdup(Instruction_symbol_list[1]);
     }
-    //printf("hi: %s\n", symbol_type);
-    if(Instruction_symbol_list[2] != NULL) {
+        
+    else { //checkig if it a symbol of data mat string etc..
+        var2 = findSymbolname(Instruction_symbol_list[1]);
+        var = strdup(Instruction_symbol_list[0]);
+    }
+        
+    //checking for data inside the symbol
+    if(Instruction_symbol_list[2] != NULL) 
         values = strdup(Instruction_symbol_list[2]);
-        printf("check: %s\n", values);
-    }
+    
     else
         values = strdup("");
 
+    //free allocate memory
     for (int j = 0; j < len; j++) {
         free(Instruction_symbol_list[j]);
     }
     free(Instruction_symbol_list);
     
-    StoreSymbol(name, symbol_type, values, ptrline);
+    //change the order of passing data if it type of .entry or .extern
+    if(strchr(var, '.'))
+        StoreSymbol(var2, var, values, ptrline);
+    else
+        StoreSymbol(var, var2, values, ptrline);
    // printf("instruction_symbol: %s\n", **Instruction_symbol_list);
 }
 
 
 void buildCommandTable(char* word, FILE *file, char *line) {
-    //printf("Building command table for line: %s\n", line);
+    //printf("is inside:?");
     char *ptrline = line;
-    
-    //printf("is skip good?: %s\n",ptrline);
-        // Get the token array from the skipped line
     skipping_label(&ptrline, word);
+
     char **Instruction_list = split_instruction_opcode(ptrline);
     if (!Instruction_list) {
         printf("Failed to split instruction.\n");
@@ -84,60 +67,77 @@ void buildCommandTable(char* word, FILE *file, char *line) {
     int i = 0;
     while(Instruction_list[i] != NULL){
         char *inst = Instruction_list[i];
-        printf("inst: %s\n", inst);
-        printf("index: %d\n", i);
+        //printf("index: %d\n", i);
         if(i == 0) {
             for(int j = 0; j < MAX_OPCODE; j++) {
                 //printf("[%s]\n", inst);
                 //printf("current command: %s\n", opcode_table[j].name);
+             
                 if(strcmp(inst,opcode_table[j].name ) == 0)
                 {
 
                     index_command = j;
                     int isNeedOp = opcode_table[j].isOneOp;
                     if(isNeedOp == 1) {
-                        printf("dist cant be use on the function");
+                        //printf("dist cant be use on the function");
                         index_opernad_dist = -999; //not needed to use dist operand!
                         
 
                     }
+                    
                     else if(opcode_table[j].isOneOp == 0) {
                         //no needed to use two operands for the function!
-                        printf("current command without operands: %d\n", opcode_table[j].isOneOp);
+                        //printf("current command without operands: %d\n", opcode_table[j].isOneOp);
                         index_operand_src = -999;
                         index_opernad_dist = -999;
                     
                     }
+                    //printf("gasdgsd %d\n", index_opernad_dist);
                     break;
                 }
+
 
             }
         }   
 
            // printf("%d, %d : %s\n", index_operand_src, index_opernad_dist, inst);
-            if(index_operand_src != -999 || index_opernad_dist != -999)
+            if((index_operand_src != -999 || index_opernad_dist != -999) && i > 0)
+            {
                 for (int j = 0; j < MAX_OPERAND; j++) {
-                    //printf("%s : %s\n", operands_table[j], index_operand_src);
-                    if (strcmp(inst, operands_table[j].name) == 0) { 
+                    
+                    if (strcmp(inst, operands_table[j].name) == 0) {
                         if (index_operand_src == -1)
                             index_operand_src = j;
                         else if(index_opernad_dist == -1)
                             index_opernad_dist = j;
+                        break;
                     }
-                    if(*inst == '#') {
-                        *inst++;;
-                        index_opernad_dist = *inst - '0';
-                        printf("dist: %d\n", index_opernad_dist);
-                        isnumber = 1;
-                        continue;
+                    else if (*inst == '#') {
+                        if(i == 1) {
+                            index_operand_src = atoi(inst + 1);
+                            isnumber = 1;
+                        }
+                        else if( i == 2) {
+                            index_opernad_dist = atoi(inst + 1);
+                            isnumber = 2;
+                        }
+
+                        break;
+
+                    }// when the value it a number and not operand or label like - #5
+                    else if (*inst != '\0' && isOperandValid(inst) == 0) {
+                        //printf("hisfafasf\n");
+                        if (i == 2)
+                            index_opernad_dist = -998;
+                        else if (i == 1)
+                            index_operand_src = -998;
+                        break;
                     }
                 }
+            }
+
           i++;
         }
-
-          //  printf("%d, %d : %s\n", index_operand_src, index_opernad_dist, I);
-
-
 
     // Free each token and the token array
     
@@ -148,15 +148,21 @@ void buildCommandTable(char* word, FILE *file, char *line) {
         
     }
     free(Instruction_list);
-        printf("command index: %d\n", index_command);
-    printf("operand src index: %d\n", index_operand_src);
-    printf("operand dist index: %d\n", index_opernad_dist);
+    //printf("command index: %d\n", index_command);
+    //printf("operand src index: %d\n", index_operand_src);
+    //printf("operand dist index: %d\n", index_opernad_dist);
     if(index_command == -1 || index_operand_src == -1 || index_opernad_dist == -1)
     {
         printf("problem with the command of: %s\n", ptrline);
+        exit(1);
         return;
 
+
     }
-    StoreCommands(index_command, index_operand_src, index_opernad_dist, line);
+
+
+    printf("is a number: %d \n", isnumber);
+
+   StoreCommands(index_command, index_operand_src, index_opernad_dist, line, isnumber);
     
 }
