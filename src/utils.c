@@ -328,6 +328,7 @@ char *ExtractBinary(char *label, Operand temp) {
             for(int i = 0; i < macrocounter; i++){
                 if(strcmp(label, macro_table[i].name) == 0)
                     found = 1;
+                    
             }
         }
 

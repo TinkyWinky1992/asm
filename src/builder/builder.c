@@ -165,7 +165,7 @@ void buildMacroTable(FILE *file, char *line) {
     }
     
 // Read lines into temporary buffer
-    char buffer[256];
+    char buffer[1024];
     char **tempLines = malloc(10 * sizeof(char*));
     int tempCapacity = 10;
     int tempLineCount = 0;

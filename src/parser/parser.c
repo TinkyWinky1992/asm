@@ -55,7 +55,7 @@ Opcode opcode_table[MAX_OPCODE] = {
 
 int macrocounter = 0;
 int flagEn = 0;
-int flagSnt = 0;
+
 
 
 

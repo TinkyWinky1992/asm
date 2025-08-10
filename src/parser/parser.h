@@ -36,7 +36,6 @@ extern Macro macro_table[MAX_MACROS];
 extern char *symbolTypes_table[5];
 extern int macrocounter;
 extern int flagEn;
-extern int flagSnt;
 
 //Function prototypes
 int isSymbol(char* word);
