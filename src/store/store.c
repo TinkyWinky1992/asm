@@ -25,68 +25,87 @@
 
 
 
-//this function is used to store the symbols in the DC_memory
-void StoreSymbol(char *name, char *type, char *values, char * line) {
-   // printf("name %s\n", name);
-   // printf("type: %s\n", type);
-   // printf("values: %s\n", values);
-    if(sizeof(name) > MAX_LABEL_LEN) {
-        printf("Error: Symbol name exceeds maximum length of %d characters.\n", MAX_LABEL_LEN);
-        return;
-    }
-    if(DC_index >= MAX_MEMORY_CI_CD) {
+void StoreSymbol(char *name, char *type, char *values, char *line) {
+
+    
+    // Check if there's enough space left in DC_memory to store a new symbol
+    if (DC_index >= MAX_MEMORY_CI_CD) {
         printf("Error: Out of memory for storing symbol: %s\n", name);
         return;
     }
+
+    // Initialize flags for symbol type: external or entry
     int isExternal = 0;
     int isEntry = 0;
+
+    // Get the SymbolType enum value from the given type string
     SymbolType temp_type = getSymbolType(type);
-    if(temp_type == SYMBOL_ENTRY){
-      //  printf("Entry symbol: %s\n", name);
+
+    // Set flags based on the symbol type
+    if (temp_type == SYMBOL_ENTRY) {
         isEntry = 1;
-    }
-        
-    else if(temp_type == SYMBOL_EXTERN)
+    } else if (temp_type == SYMBOL_EXTERN) {
         isExternal = 1;
+    }
 
-
+    // Create a new Symbol struct and zero-initialize all fields
     Symbol newSymbol = {0};
-    strncpy(newSymbol.name, name, MAX_LABEL_LEN - 1);
+
+    // Copy the symbol name safely into the newSymbol.name buffer
+    // Use MAX_LABEL_LEN - 1 to leave space for the null terminator
+    name = trim_whitespace(name); 
+    int len = strlen(name);
+    newSymbol.name = malloc(len + 1);
+    if (!newSymbol.name) {
+        perror("malloc failed");
+        // handle error...
+    }
+    trim_whitespace(name);
+    strcpy(newSymbol.name, name);// Ensure null termination
+    printf("DEBUG: copied name = '%s'\n", newSymbol.name);
+
+
+    // Set the symbol's address to the current DC_index
     newSymbol.address = DC_index;
+
+    // Set the symbol's type and flags
     newSymbol.type = temp_type;
     newSymbol.isExternal = isExternal;
     newSymbol.isEntry = isEntry;
 
-
-    // If values are provided, handle them accordingly
+    // If values string is provided and not empty, duplicate it and assign to symbol
+    // strdup allocates memory on the heap that should be freed later to avoid leaks
     if (values && strlen(values) > 0) {
-        newSymbol.values = strdup(values); // Allocate memory for values
+        newSymbol.values = strdup(values);
+        if (!newSymbol.values) {
+            printf("Error: Memory allocation failed for symbol values.\n");
+            return;
+        }
+    } else {
+        // No values provided for this symbol
+        newSymbol.values = NULL;
     }
-    else 
-        newSymbol.values = NULL; // No values provided
 
-        
-    // Store the symbol in the DC_memory
-    DC_memory[DC_index] = newSymbol;
+    // Store the new symbol in the DC_memory array at the current DC_index
+    DC_memory[DC_index] = newSymbol;  // Increment DC_index after storing
+    printf("DC: %s\n", DC_memory[DC_index].name);
     DC_index++;
-    if(newSymbol.isEntry){
-        //printf("Entry symbol: %s\n", newSymbol.name);
-        entry_memory[entry_index++] = newSymbol;
-        //printf("index: %d\n", entry_index);
+    // If the symbol is an entry type, add it to the entry_memory array for quick access
+    if (newSymbol.isEntry) {
+        entry_memory[entry_index] = newSymbol;
+        entry_index++;
     }
-        
-    else if(newSymbol.isExternal)
-        extern_memory[extern_index++] = newSymbol;
+    // If the symbol is external, add it to the extern_memory array
+    else if (newSymbol.isExternal) {
+        extern_memory[extern_index] = newSymbol;
+        extern_index++;
+    }
 
-    //for debugging purposes
-    //printSymbolsTable();
 
-
-    
+    printSymbolsTable();
 }
 //this function is used to store the commands with the operands in the IC_memory
 void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
-    printf("hasfs: %d %d\n", src, dist);
     char *ptrline = line;
     Instruction inst;
     memset(&inst, 0, sizeof(Instruction));
@@ -162,9 +181,9 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
     } else if (dist == -998) {
         // dist is a label
         char **spliter = split_instruction_opcode(ptrline);
-        printf("chkin spliter: %s\n", spliter[0]);
-        printf("chkin spliter: %s\n", spliter[1]);
-        printf("chkin spliter: %s\n", spliter[2]);
+      //  printf("chkin spliter: %s\n", spliter[0]);
+       // printf("chkin spliter: %s\n", spliter[1]);
+        //printf("chkin spliter: %s\n", spliter[2]);
 
         if(src == -999) {
             if (label != NULL)
@@ -217,14 +236,7 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
         printf("Out of memory for Operation of: %s", line);
         return;
     }
-/*
-    int valid =validationMathods(opcode, operand_src, operand_dist);
-    if(valid == -1) {
-        printf("Error with the  Instruction not illigal");
-        exit(1);
-        return;
-    }
-*/
+
 
     CI_memory[CI_index] = inst;
     CI_index++;

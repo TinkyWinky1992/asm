@@ -6,32 +6,49 @@
 #define MAX_TOKENS 4
 #define MAX_TOKEN_SYMBOL 3
 
-char **split_instruction_symbol(const char *input,int* outSize) {
-    printf("check: %s\n", input);
+char **split_instruction_symbol(const char *input, int* outSize) {
     char** result = malloc(MAX_TOKEN_SYMBOL * sizeof(char*));
     *outSize = 0;
 
-    char* line = strdup(input);  // modifiable copy
+    // Make a modifiable copy of input
+    char* line = strdup(input);
+    if (!line) {
+        perror("strdup failed");
+        return NULL;
+    }
 
-    // extract name
-    char* colon = strchr(line, ' ');
+    // Skip leading spaces in line
+    char* start = line;
+    while (isspace((unsigned char)*start)) start++;
+
+    if (*start == '\0') {
+        // Empty or all spaces input
+        free(line);
+        return result;
+    }
+
+    // Now find first space after the trimmed start
+    char* colon = strchr(start, ' ');
     if (!colon) {
-        printf("Error: No colon found in input.\n");
+        printf("Error: No space found in input.\n");
         free(line);
         return NULL;
     }
 
     *colon = '\0';
-    size_t len = strlen(line);
-    if (len > 0 && line[len - 1] == ':') {
-        line[len - 1] = '\0';  // strip the colon
+
+    // Strip trailing colon from name if exists
+    size_t len = strlen(start);
+    if (len > 0 && start[len - 1] == ':') {
+        start[len - 1] = '\0';
     }
-    result[0] = strdup(line);  // name
+
+    result[0] = strdup(start);
     (*outSize)++;
 
-    // 2. After colon: get type
+    // After the first space (colon), skip spaces again
     char* rest = colon + 1;
-    while (isspace(*rest)) rest++;  // skip spaces
+    while (isspace((unsigned char)*rest)) rest++;
 
     if (*rest == '\0') {
         free(line);
@@ -40,9 +57,10 @@ char **split_instruction_symbol(const char *input,int* outSize) {
 
     // Extract type (until next space or end)
     char* typeStart = rest;
-    while (*rest && !isspace(*rest)) rest++;
+    while (*rest && !isspace((unsigned char)*rest)) rest++;
     char saved = *rest;
     *rest = '\0';
+
     result[1] = strdup(typeStart);
     (*outSize)++;
 
@@ -51,9 +69,10 @@ char **split_instruction_symbol(const char *input,int* outSize) {
         return result;  // only name + type
     }
 
-    // 3. There's more: extract value
-    rest++;  // move past null terminator we injected
-    while (isspace(*rest)) rest++;
+    // Extract value if exists
+    rest++; // move past the null terminator we injected
+    while (isspace((unsigned char)*rest)) rest++;
+
     if (*rest != '\0') {
         result[2] = strdup(rest);
         (*outSize)++;
@@ -61,8 +80,8 @@ char **split_instruction_symbol(const char *input,int* outSize) {
 
     free(line);
     return result;
-
 }
+
 
 char **split_instruction_opcode(const char *line) {
     char **tokens = malloc(sizeof(char*) * (MAX_TOKENS + 1)); // +1 for NULL at end

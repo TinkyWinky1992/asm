@@ -15,7 +15,7 @@ typedef enum {
 
 
 typedef struct {
-    char name[MAX_LABEL_LEN];
+    char *name;
     int address;              
     SymbolType type;          
     int isExternal;       

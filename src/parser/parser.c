@@ -249,6 +249,7 @@ void printInstructionTable() {
 void printSymbolsTable() {
     printf("\n==== DC MEMOY(%d used) ====\n", DC_index);
     for(int i = 0; i < DC_index; i++) {
+ 
         Symbol *sym = &DC_memory[i];
         printf("[%d] %s %d %s\n", i ,sym->name ,sym->address, sym->values);
     }
