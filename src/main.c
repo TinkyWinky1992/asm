@@ -89,7 +89,8 @@ void RegisterLine(char* line, FILE *file) {
           buildSymbolTable(word, file, line);
         
         else if(isMacro(word, file, line) == 1)
-                printMacroTable();
+            buildMacroTable(file, line);
+             
         else if (isCommand(word)== 1 ) {
          
           buildCommandTable(word, file, line);

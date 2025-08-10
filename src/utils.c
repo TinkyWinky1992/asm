@@ -324,6 +324,12 @@ char *ExtractBinary(char *label, Operand temp) {
                 }
             }
         }
+        if(!found) {
+            for(int i = 0; i < macrocounter; i++){
+                if(strcmp(label, macro_table[i].name) == 0)
+                    found = 1;
+            }
+        }
 
         if (!found) {
             printf("Error: Label '%s' not found for SRC operand.\n", label);

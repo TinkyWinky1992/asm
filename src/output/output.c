@@ -16,29 +16,53 @@ void ObMemoryToFile() {
     fprintf(fp, "     Base 4 Address   Code\n");
     fprintf(fp, "     ---------------  ---------\n");
     int i = 0; 
+
     //printf("CI_index: %d\n", CI_index);
 
     //Handling IC Memory
-    for(i = 0; i < CI_index; i++) {
-        if(i + MAX_DC_INDEX > MAX_MEMORY) {
-            printf("Error: CI index exceeds maximum limit.\n");
-            fclose(fp);
-            return;
+    for(int i = 0; i < CI_index; i++) {
+        Instruction *p = &CI_memory[i];
+
+        // Check if this instruction's name matches any macro name
+        int isMacro = 0;
+        for (int m = 0; m < macrocounter; m++) {
+            if ((p->src_label && strcmp(p->src_label ,macro_table[m].name) == 0) ||( p->dist_label && strcmp(p->dist_label ,macro_table[m].name) == 0)) {
+                
+                isMacro = 1;
+
+                // Print all instructions inside macro
+                for (int mi = 0; mi < macro_table[m].lineCounter; mi++) {
+                    Instruction *macroInst = macro_table[m].LineInst[mi];
+                    char **binaryLines = ExtractBinaryValuesWithExtra(macroInst);
+
+                    for (int bl = 0; bl < 256 && binaryLines[bl] != NULL; bl++) {
+                        char *base4Addr = convertToBase4(i + MAX_DC_INDEX);
+                        fprintf(fp, "     %s             %s\n", base4Addr, binaryLines[bl]);
+                        free(base4Addr);
+                        free(binaryLines[bl]);
+                    }
+                    free(binaryLines);
+                }
+                break;
+            }
         }
 
-        Instruction *p = &CI_memory[i];
-        //printf("binary before: %s\n", p->src.binary);
-        char **binary = ExtractBinaryValuesWithExtra(p);
-        
-        for(int j = 0; j < 256 && binary[j] != NULL; j++) {
-            char *base4 = convertToBase4(i + MAX_DC_INDEX);
-            fprintf(fp, "     %s             %s\n", base4, binary[j]);
-            free(binary[j]); // Free each binary string
+        if (!isMacro) {
+            char **binary = ExtractBinaryValuesWithExtra(p);
+            for(int j = 0; j < 256 && binary[j] != NULL; j++) {
+                char *base4Addr = convertToBase4(i + MAX_DC_INDEX);
+                fprintf(fp, "     %s             %s\n", base4Addr, binary[j]);
+                free(base4Addr);
+                free(binary[j]);
+    
+            }
+            free(binary);
         }
-        free(binary); // Free the allocated memory for binary string
-        
     }
+
+    fclose(fp);
 }
+
 
 void entryToFile() {
     if(entry_index == 0) {

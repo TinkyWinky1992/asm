@@ -70,9 +70,9 @@ void StoreSymbol(char *name, char *type, char *values, char * line) {
     DC_memory[DC_index] = newSymbol;
     DC_index++;
     if(newSymbol.isEntry){
-        printf("Entry symbol: %s\n", newSymbol.name);
+        //printf("Entry symbol: %s\n", newSymbol.name);
         entry_memory[entry_index++] = newSymbol;
-        printf("index: %d\n", entry_index);
+        //printf("index: %d\n", entry_index);
     }
         
     else if(newSymbol.isExternal)
@@ -86,7 +86,7 @@ void StoreSymbol(char *name, char *type, char *values, char * line) {
 }
 //this function is used to store the commands with the operands in the IC_memory
 void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
-    printf("hasfs: %d %d\n", src, dist);
+    //printf("hasfs: %d %d\n", src, dist);
     char *ptrline = line;
     Instruction inst;
     memset(&inst, 0, sizeof(Instruction));
@@ -123,8 +123,8 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
         sprintf(operand_src.name, "#%s", num);
         operand_src.binary = strdup(binary);
 
-        printf("src name: %s\n", operand_src.name);
-        printf("src binary: %s\n", operand_src.binary);
+       // printf("src name: %s\n", operand_src.name);
+        //printf("src binary: %s\n", operand_src.binary);
         free(num);
 
     } else if (src == -998) {
@@ -172,7 +172,7 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
     } else {
         // dist is not used
         operand_dist = operands_table[8]; // assume 8 is for "no operand"
-        printf("dist name: %s\n", operand_dist.name);
+        //printf("dist name: %s\n", operand_dist.name);
     }
 
     // Store the instruction label (if present)
@@ -188,7 +188,6 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
         inst.name = NULL;
     }
 
-    printf("chh: %s\n", inst.name);
 
     // Finalize instruction
     inst.opcode = opcode;

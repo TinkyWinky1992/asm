@@ -2,6 +2,7 @@
 #define MACRO_H
 #include <stdio.h>
 #include <stdlib.h>
+#include "./general.h"
 
 #define MAX_MACRO_NAME 32
 #define MAX_MACROS 100
@@ -12,6 +13,8 @@ typedef struct
     char ** lines;
     int lineCounter;
     int capacity;
+    Instruction **LineInst;
+
 } Macro;
 
 #endif
