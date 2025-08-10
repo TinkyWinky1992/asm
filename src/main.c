@@ -1,16 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <dirent.h>
+#include <ctype.h>
+#include <string.h>
 #include "./parser/parser.h"
 #include "./utils.h"
 #include "./builder/builder.h"
-#include <string.h>
+
 #include "./output/output.h"
+
+
 
 #define MAX_LlINE 128
 #define MAX_WORD_LENGTH 100
 
 
 char *read_line(FILE* file) {
+
     int size = MAX_LlINE;
     char *buffer = malloc(size);
     if(buffer == NULL) {
@@ -92,7 +98,7 @@ void RegisterLine(char* line, FILE *file) {
             buildMacroTable(file, line);
              
         else if (isCommand(word)== 1 ) {
-         
+            
           buildCommandTable(word, file, line);
 
         }
@@ -107,11 +113,6 @@ void RegisterLine(char* line, FILE *file) {
     }
 }
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <dirent.h>
-#include <ctype.h>
 
 // Function to check if a filename ends with ".as"
 int ends_with_as(const char *filename) {
@@ -122,6 +123,7 @@ int ends_with_as(const char *filename) {
 }
 
 int main(int argc, char *argv[]) {
+
     struct dirent *entry;
     DIR *dir = opendir("tests");
 

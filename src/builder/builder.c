@@ -280,6 +280,7 @@ void buildSymbolTable(char* word, FILE *file, char *line) {
 
 
 void buildCommandTable(char* word, FILE *file, char *line) {
+    
     //printf("is inside:?");
     char *ptrline = line;
     skipping_label(&ptrline, word);
@@ -313,7 +314,7 @@ void buildCommandTable(char* word, FILE *file, char *line) {
                     int isNeedOp = opcode_table[j].isOneOp;
                     if(isNeedOp == 1) {
                         //printf("dist cant be use on the function");
-                        index_opernad_dist = -999; //not needed to use dist operand!
+                        index_operand_src = -999; //not needed to use dist operand!
                         
 
                     }
@@ -347,8 +348,17 @@ void buildCommandTable(char* word, FILE *file, char *line) {
                     }
                     else if (*inst == '#') {
                         if(i == 1) {
-                            index_operand_src = atoi(inst + 1);
-                            isnumber = 1;
+                            if(index_operand_src == -999)
+                            {
+                                 index_opernad_dist = atoi(inst -1);
+                                 isnumber = 2;
+                            }
+                               
+                            else {
+                                index_operand_src = atoi(inst + 1);
+                                isnumber = 1;
+                            }
+
                         }
                         else if( i == 2) {
                             index_opernad_dist = atoi(inst + 1);
@@ -363,7 +373,10 @@ void buildCommandTable(char* word, FILE *file, char *line) {
                         if (i == 2)
                             index_opernad_dist = -998;
                         else if (i == 1)
-                            index_operand_src = -998;
+                            if(index_operand_src == -999)
+                                index_opernad_dist = -998;
+                            else
+                                index_operand_src = -998;
                         break;
                     }
                 }
@@ -392,9 +405,6 @@ void buildCommandTable(char* word, FILE *file, char *line) {
 
 
     }
-
-
-   // printf("is a number: %d \n", isnumber);
 
    StoreCommands(index_command, index_operand_src, index_opernad_dist, line, isnumber);
     

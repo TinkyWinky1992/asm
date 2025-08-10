@@ -45,5 +45,6 @@ int isMacro(char *word, FILE *file, char *line);
 void printMacroTable();
 void printInstructionTable();
 void printSymbolsTable();
+int validationMathods(Instruction * inst);
 #endif
 

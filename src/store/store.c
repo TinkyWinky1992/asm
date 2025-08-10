@@ -86,7 +86,7 @@ void StoreSymbol(char *name, char *type, char *values, char * line) {
 }
 //this function is used to store the commands with the operands in the IC_memory
 void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
-    //printf("hasfs: %d %d\n", src, dist);
+    printf("hasfs: %d %d\n", src, dist);
     char *ptrline = line;
     Instruction inst;
     memset(&inst, 0, sizeof(Instruction));
@@ -122,6 +122,7 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
         operand_src.name = malloc(len + 2);  // +1 for '#', +1 for '\0'
         sprintf(operand_src.name, "#%s", num);
         operand_src.binary = strdup(binary);
+        operand_src.isnumber = 1;
 
        // printf("src name: %s\n", operand_src.name);
         //printf("src binary: %s\n", operand_src.binary);
@@ -155,15 +156,31 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
         operand_dist.name = malloc(len + 2);  // +1 for '#', +1 for '\0'
         sprintf(operand_dist.name, "#%s", num); // create name with '#'
         operand_dist.binary = strdup(binary); // copy binary representation
+        operand_dist.isnumber = 1;
         free(num); 
 
     } else if (dist == -998) {
         // dist is a label
         char **spliter = split_instruction_opcode(ptrline);
-        if (label != NULL)
-            inst.dist_label = strdup(spliter[3]);
-        else
+        printf("chkin spliter: %s\n", spliter[0]);
+        printf("chkin spliter: %s\n", spliter[1]);
+        printf("chkin spliter: %s\n", spliter[2]);
+
+        if(src == -999) {
+            if (label != NULL)
+                inst.dist_label = strdup(spliter[2]);
+            else
+                inst.dist_label = strdup(spliter[1]);
+        }
+        else{
+            if (label != NULL)
+                inst.dist_label = strdup(spliter[3]);
+            else
             inst.dist_label = strdup(spliter[2]);
+        }
+
+
+        printf("checking\n");
         free(spliter);
 
     } else if (dist != -999) {
@@ -200,10 +217,19 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
         printf("Out of memory for Operation of: %s", line);
         return;
     }
+/*
+    int valid =validationMathods(opcode, operand_src, operand_dist);
+    if(valid == -1) {
+        printf("Error with the  Instruction not illigal");
+        exit(1);
+        return;
+    }
+*/
+
     CI_memory[CI_index] = inst;
     CI_index++;
 
 
     //for debugging purposes to print the instruction table
-   // printInstructionTable();
+    printInstructionTable();
 }

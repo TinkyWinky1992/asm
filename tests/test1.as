@@ -1,28 +1,14 @@
-.entry hi
-.extern something
+MAIN: mov M1[r2][r7],LENGTH
+ add r2,STR
+LOOP: jmp END
+ prn #-5
+ sub r1, r4
+ inc K
 
-mcro dosomething
-     mov #-5, r1
-     sub #1, r1
-     mov r1, r3
-
-mcroend
-
-mcro lol
-     mov #10, r1
-     sub #1, r1
-     mov r1, r3
-
-mcroend
-
-
-
-
-hi: mov r1,r2
-LOOP: cmp r1, something
-     bne LOOP
-     jmp dosomething
-DO:  jmp lol
-     jmp do
-     stop
-END
+ mov M1[r3][r3],r3
+ bne LOOP
+END: stop
+STR: .string “abcdef”
+LENGTH: .data 6,-9,15
+K: .data 22
+M1: .mat [2][2] 1,2,3,4

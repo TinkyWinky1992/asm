@@ -302,8 +302,8 @@ char *ExtractBinary(char *label, Operand temp) {
     char *binary = NULL;
     int found = 0;
     int labelAddr = 0;
-
-
+    printf("label checking %s\n", label);
+    
         if(label != NULL && strlen(label) > 0) {
         // Search for the label in DC_memory
         int found = 0;

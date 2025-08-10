@@ -10,6 +10,8 @@ typedef struct opcode
     int opcodeValue;
     char binary[5];
     int isOneOp;
+    int validMathodsSrc[6];
+    int validMathodsDist[6];
 
 }Opcode;
  
@@ -18,6 +20,7 @@ typedef struct operand
     char *name;
     int value;    
     char *binary;
+    int isnumber;
   
 
 } Operand;

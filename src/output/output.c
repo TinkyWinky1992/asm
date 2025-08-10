@@ -23,6 +23,11 @@ void ObMemoryToFile() {
     for(int i = 0; i < CI_index; i++) {
         Instruction *p = &CI_memory[i];
 
+        int validchecker = validationMathods(p);
+        if(validchecker == -1) {
+            exit(1);
+        }
+
         // Check if this instruction's name matches any macro name
         int isMacro = 0;
         for (int m = 0; m < macrocounter; m++) {

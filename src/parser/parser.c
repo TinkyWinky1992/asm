@@ -22,41 +22,104 @@ char *symbolTypes_table[] = {
 
 
 Operand operands_table[MAX_OPERAND] = {
-    {"r0", 0, "000"},
-    {"r1", 1, "001"},
-    {"r2", 2, "010"},
-    {"r3", 3, "011"},
-    {"r4", 4, "100"},
-    {"r5", 5, "101"},
-    {"r6", 6, "110"},
-    {"r7", 7, "111"},
-    {"ud", -999, "000"},
+    {"r0", 0, "000", 0},
+    {"r1", 1, "001", 0},
+    {"r2", 2, "010", 0},
+    {"r3", 3, "011", 0},
+    {"r4", 4, "100", 0},
+    {"r5", 5, "101", 0},
+    {"r6", 6, "110", 0},
+    {"r7", 7, "111", 0},
+    {"ud", -999, "000", 0},
 
 };
-
 Opcode opcode_table[MAX_OPCODE] = {
-    {"mov", 0, "0000", -1},
-    {"sub", 1, "0001", -1},
-    {"cmp", 2, "0010", -1},
-    {"add", 3, "0011", -1},
-    {"not", 4, "0100", 1},
-    {"clr", 5, "0101", 1},
-    {"lea", 6, "0110", -1},
-    {"inc", 7, "0111", 1},
-    {"dec", 8, "1000", 1},
-    {"jmp", 9, "1001", 1},
-    {"bne", 10, "1010", 1},
-    {"red", 11, "1011", 1},
-    {"prn", 12, "1100", 1},
-    {"jsr", 13, "1101", 1},
-    {"rts", 14, "1110", 0},
-    {"stop", 15, "1111", 0}
+    {"mov", 0, "0000", -1, {0, 1, 2, 3, -1},      {1, 2, 3, -1, -1}},
+    {"sub", 1, "0001", -1, {0, 1, 2, 3, -1},      {1, 2, 3, -1, -1}},
+    {"cmp", 2, "0010", -1, {0, 1, 2, 3, -1},      {0, 1, 2, 3, -1}},
+    {"add", 3, "0011", -1, {0, 1, 2, 3, -1},      {1, 2, 3, -1, -1}},
+    {"not", 4, "0100",  1, {-1, -1, -1, -1, -1},  {1, 2, 3, -1, -1}},
+    {"clr", 5, "0101",  1, {-1, -1, -1, -1, -1},  {1, 2, 3, -1, -1}},
+    {"lea", 6, "0110", -1, {2, 3, -1, -1, -1},    {1, 2, 3, -1, -1}},
+    {"inc", 7, "0111",  1, {-1, -1, -1, -1, -1},  {1, 2, 3, -1, -1}},
+    {"dec", 8, "1000",  1, {-1, -1, -1, -1, -1},  {1, 2, 3, -1, -1}},
+    {"jmp", 9, "1001",  1, {-1, -1, -1, -1, -1},  {1, 2, 3, -1, -1}},
+    {"bne",10, "1010",  1, {-1, -1, -1, -1, -1},  {1, 2, 3, -1, -1}},
+    {"red",11, "1011",  1, {-1, -1, -1, -1, -1},  {1, 2, 3, -1, -1}},
+    {"prn",12, "1100",  1, {-1, -1, -1, -1, -1},  {0, 1, 2, 3, -1}},
+    {"jsr",13, "1101",  1, {-1, -1, -1, -1, -1},  {1, 2, 3, -1, -1}},
+    {"rts",14, "1110",  0, {-1, -1, -1, -1, -1},  {-1, -1, -1, -1, -1}},
+    {"stop",15,"1111",  0, {-1, -1, -1, -1, -1},  {-1, -1, -1, -1, -1}}
 };
+
 
 int macrocounter = 0;
 int flagEn = 0;
+int ValidPerOperand(int *mathods, Operand op) {
+        if (!mathods) {
+        printf("ERROR: mathods pointer is NULL!\n");
+        return -1;
+    }
+    int i = 0;
+    int flag0 = -1, flag1 = -1, flag2 = -1, flag3 = -1;
+
+    printf("checking mathods: %d\n", mathods[0]);
+
+    while (mathods[i] != -1) { // stop at sentinel
+        if (mathods[i] == 0) flag0 = 1;
+        else if (mathods[i] == 1) flag1 = 1;
+        else if (mathods[i] == 2) flag2 = 1;
+        else if (mathods[i] == 3) flag3 = 1;
+        i++;
+    }
+    if ((flag0 == -1 && op.isnumber != 0) || (flag3 == -1 && op.name != "ud")) {
+        printf("Error with operand of %s\n", op.name);
+        return -1;
+    }
+
+    if (flag1 == -1 && op.name == NULL) {
+        printf("Error: Label not allowed on this Instruction\n");
+        return -1;
+    }
+
+    if (flag2 == -1) {
+        return 2; // need later check
+    }
+    return 1;
+}
 
 
+
+void validMetrix(char *label) {
+    for(int i = 0; i < DC_index; i++) {
+        Symbol s = DC_memory[i];
+            
+        if(s.type == SYMBOL_METRIX && strcmp(label, s.name) == 0)
+        {
+            printf("Error name of label %s is a Metrix\n", label);
+            exit(1);
+        }
+           
+    }
+}
+int validationMathods(Instruction *inst) {
+
+    int *extract_mathodsSrc = inst->opcode.validMathodsSrc;
+    int *extract_mathodsDist = inst->opcode.validMathodsDist;
+
+    int validsrc = ValidPerOperand(extract_mathodsSrc, inst->src);
+    int validDist = ValidPerOperand(extract_mathodsDist,inst->dist);
+    printf("inside of isntruction %s %s %s %s\n", inst->opcode.name, inst->src.name, inst->dist.name);
+    if(validsrc == 2) {
+        validMetrix(inst->src_label);
+    }
+
+    else if (validDist == 2) {
+        validMetrix(inst->src_label);
+    }
+
+    return 1;
+}
 
 
 
