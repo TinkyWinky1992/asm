@@ -243,7 +243,6 @@ void buildSymbolTable(char* word, FILE *file, char *line) {
     int len = 0;
 
     char **Instruction_symbol_list = split_instruction_symbol(ptrline, &len);
-    printf("cffgg: %s\n", Instruction_symbol_list[1]);
     char *var = NULL;
     char *var2 = NULL;
     char *values = NULL;

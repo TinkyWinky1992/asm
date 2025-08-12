@@ -62,7 +62,7 @@ void StoreSymbol(char *name, char *type, char *values, char *line) {
     }
     trim_whitespace(name);
     strcpy(newSymbol.name, name);// Ensure null termination
-    printf("DEBUG: copied name = '%s'\n", newSymbol.name);
+    
 
 
     // Set the symbol's address to the current DC_index
@@ -88,7 +88,6 @@ void StoreSymbol(char *name, char *type, char *values, char *line) {
 
     // Store the new symbol in the DC_memory array at the current DC_index
     DC_memory[DC_index] = newSymbol;  // Increment DC_index after storing
-    printf("DC: %s\n", DC_memory[DC_index].name);
     DC_index++;
     // If the symbol is an entry type, add it to the entry_memory array for quick access
     if (newSymbol.isEntry) {
@@ -198,8 +197,6 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
             inst.dist_label = strdup(spliter[2]);
         }
 
-
-        printf("checking\n");
         free(spliter);
 
     } else if (dist != -999) {
