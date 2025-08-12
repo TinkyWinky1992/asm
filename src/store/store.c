@@ -30,7 +30,8 @@ void StoreSymbol(char *name, char *type, char *values, char *line) {
     
     // Check if there's enough space left in DC_memory to store a new symbol
     if (DC_index >= MAX_MEMORY_CI_CD) {
-        printf("Error: Out of memory for storing symbol: %s\n", name);
+       // printf("Error: Out of memory for storing symbol: %s\n", name);
+        WirteToErrorFile("Error: Out of memory for storing symbol: %s\n", name);
         return;
     }
 
@@ -79,6 +80,7 @@ void StoreSymbol(char *name, char *type, char *values, char *line) {
         newSymbol.values = strdup(values);
         if (!newSymbol.values) {
             printf("Error: Memory allocation failed for symbol values.\n");
+            WirteToErrorFile("Error: Memory allocation failed for symbol values.\n");
             return;
         }
     } else {
@@ -230,7 +232,8 @@ void StoreCommands(int command, int src, int dist, char *line, int isnumber) {
 
     // Store in memory
     if (CI_index > MAX_MEMORY_CI_CD) {
-        printf("Out of memory for Operation of: %s", line);
+        WirteToErrorFile("Out of memory for Operation of: %s", line);
+       // printf("Out of memory for Operation of: %s", line);
         return;
     }
 

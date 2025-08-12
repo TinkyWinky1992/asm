@@ -1,5 +1,6 @@
 MAIN: mov M1[r2][r7],LENGTH
- add r99 ; r99 is not a valid operand and add need two operands
+;r99 is not a valid operand and add need two operands
+ add r99 
 LOOP: jmp END
  prn #-5
  sub r1, r4
@@ -7,7 +8,8 @@ LOOP: jmp END
 
  mov M1[r3][r3],r3
  bne LOOP
-     stop    ;here is a problem (END: label not exsits)
+    ;here is a problem (END: label not exsits)
+     stop    
 STR: .string “abcdef”
 LENGTH: .data 6,-9,15
 K: .data 22

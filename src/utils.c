@@ -2,9 +2,30 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include "./parser/parser.h"
 #define MAX_TOKENS 4
 #define MAX_TOKEN_SYMBOL 3
+
+
+
+void WirteToErrorFile(const char *format, ...) {
+
+        FILE *fp = fopen("./bin/erorFile.ob", "wb");
+    va_list args;
+    va_start(args,format);
+
+    int len =vsnprintf(NULL, 0, format, args);
+    char *result = malloc(len + 1);
+
+    va_start(args, format);
+    vsnprintf(result, len + 1, format, args);
+    va_end(args);
+
+
+    fprintf(fp,"Error: %s\n",result);
+}
+
 
 char **split_instruction_symbol(const char *input, int* outSize) {
     char** result = malloc(MAX_TOKEN_SYMBOL * sizeof(char*));
@@ -321,7 +342,6 @@ char *ExtractBinary(char *label, Operand temp) {
     char *binary = NULL;
     int found = 0;
     int labelAddr = 0;
-    printf("label checking %s\n", label);
     
         if(label != NULL && strlen(label) > 0) {
         // Search for the label in DC_memory
@@ -352,7 +372,7 @@ char *ExtractBinary(char *label, Operand temp) {
         }
 
         if (!found) {
-            printf("Error: Label '%s' not found for SRC operand.\n", label);
+            printf("Error: Label '%s' not found for operand.\n", label);
             exit(1);
         }
 

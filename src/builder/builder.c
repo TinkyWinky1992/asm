@@ -159,8 +159,8 @@ void buildMacroTable(FILE *file, char *line) {
     macro->capacity = 10; // Initial capacity for lines
     macro->lines = malloc(macro->capacity * sizeof(char*));
     
-    if (macro->lines == NULL) {
-        printf("Error: Memory allocation failed for macro lines.\n");
+    if (macro->lines == NULL) {        
+        WirteToErrorFile("Error: Memory allocation failed for macro lines.\n");
         return -1;
     }
     
@@ -218,7 +218,7 @@ void buildMacroTable(FILE *file, char *line) {
     }
 
     if (!foundEnd) {
-        printf("Error: Missing 'mcroend' for macro '%s'.\n", macroName);
+        WirteToErrorFile("Error: Missing 'mcroend' for macro '%s'.\n", macroName);
         for (int i = 0; i < tempLineCount; i++) free(tempLines[i]);
         free(tempLines);
         return -1;
@@ -239,6 +239,11 @@ void buildMacroTable(FILE *file, char *line) {
 
 
 void buildSymbolTable(char* word, FILE *file, char *line) {
+    if(DC_index  + 1 > MAX_DC_INDEX) {
+        WirteToErrorFile("To many Macros DC Memory is full");
+        exit(1);
+    }
+
     char *ptrline = line; 
     int len = 0;
 
@@ -400,7 +405,8 @@ void buildCommandTable(char* word, FILE *file, char *line) {
     //printf("operand dist index: %d\n", index_opernad_dist);
     if(index_command == -1 || index_operand_src == -1 || index_opernad_dist == -1)
     {
-        printf("problem with the command of: %s\n", ptrline);
+        WirteToErrorFile("problem with the command of: %s\n", ptrline);
+        //printf("problem with the command of: %s\n", ptrline);
         exit(1);
         return;
 

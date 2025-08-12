@@ -7,6 +7,15 @@
 
 void ObMemoryToFile() {
     printf("starting proccess of Instruction...\n");
+    FILE *erorfp = fopen("./bin/erorFile.ob", "r");
+    if(erorfp != NULL) {
+        fseek(erorfp, 0, SEEK_END);
+        long filesize = ftell(erorfp);
+        fclose(erorfp);
+        if(filesize == 0 )
+            remove("./bin/erorFile.ob");
+    }
+
     FILE *fp = fopen("./bin/prog.ob", "wb");
     if(fp == NULL)
     {
@@ -32,7 +41,6 @@ void ObMemoryToFile() {
         int isMacro = 0;
         for (int m = 0; m < macrocounter; m++) {
             if ((p->src_label && strcmp(p->src_label ,macro_table[m].name) == 0) ||( p->dist_label && strcmp(p->dist_label ,macro_table[m].name) == 0)) {
-                
                 isMacro = 1;
 
                 // Print all instructions inside macro
