@@ -24,6 +24,7 @@ void WirteToErrorFile(const char *format, ...) {
 
 
     fprintf(fp,"Error: %s\n",result);
+    fclose(fp);
 }
 
 
