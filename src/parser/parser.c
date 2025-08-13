@@ -5,22 +5,34 @@
 #include "./parser.h"
 #include "../utils.h"
 #define MAX_MACROS 100
-int DC_index = 0;
-int CI_index = 0;
-int entry_index = 0;
-int extern_index = 0;
-MainMemory memory = {CI_memory, DC_memory , MAX_CI_INDEX, MAX_DC_INDEX, MAX_MEMORY};
+/* === Global Index Counters === */
+int DC_index      = 0;  // Data counter
+int CI_index      = 0;  // Code counter
+int entry_index   = 0;  
+int extern_index  = 0;
+
+/* === Global Memory Segments === */
 Symbol DC_memory[MAX_MEMORY_CI_CD];
 Instruction CI_memory[MAX_MEMORY_CI_CD];
 Macro macro_table[MAX_MACROS];
 Symbol entry_memory[MAX_MEMORY_CI_CD];
 Symbol extern_memory[MAX_MEMORY_CI_CD];
 
+/* === Main Memory Struct === */
+MainMemory memory = {
+    CI_memory,
+    DC_memory,
+    MAX_CI_INDEX,
+    MAX_DC_INDEX,
+    MAX_MEMORY
+};
+
+/* === Symbol Type Keywords === */
 char *symbolTypes_table[] = {
     ".entry", ".mat", ".data", ".extern", ".string"
 };
 
-
+/* === Operand Table === */
 Operand operands_table[MAX_OPERAND] = {
     {"r0", 0, "000", 0},
     {"r1", 1, "001", 0},
@@ -30,10 +42,10 @@ Operand operands_table[MAX_OPERAND] = {
     {"r5", 5, "101", 0},
     {"r6", 6, "110", 0},
     {"r7", 7, "111", 0},
-    {"ud", -999, "000", 0},
-
+    {"ud", -999, "000", 0} // Undefined operand placeholder
 };
 
+/* === Opcode Table === */
 Opcode opcode_table[MAX_OPCODE] = {
     {"mov", 0, "0000", -1, {0, 1, 2, 3, -1},      {1, 2, 3, -1, -1}},
     {"sub", 1, "0001", -1, {0, 1, 2, 3, -1},      {1, 2, 3, -1, -1}},
@@ -53,17 +65,18 @@ Opcode opcode_table[MAX_OPCODE] = {
     {"stop",15,"1111",  0, {-1, -1, -1, -1, -1},  {-1, -1, -1, -1, -1}}
 };
 
-
+/* === Global Macro Counter & Flags === */
 int macrocounter = 0;
 int flagEn = 0;
+
 //this function validate the  oprands mathods, if they are valid
-//
 int ValidPerOperand(int *mathods, Operand op) {
         if (!mathods) {
         WirteToErrorFile("mathods pointer is NULL!");
         return -1;
     }
     int i = 0;
+    //flags for the all mathod(0,1,2,3)
     int flag0 = -1, flag1 = -1, flag2 = -1, flag3 = -1;
 
     //printf("checking mathods: %d\n", mathods[0]);
@@ -93,7 +106,7 @@ int ValidPerOperand(int *mathods, Operand op) {
 }
 
 
-
+//checkink if the metrix is valid. taking the label in the commandand searchit in DC MEMORY
 void validMetrix(char *label) {
     for(int i = 0; i < DC_index; i++) {
         Symbol s = DC_memory[i];
@@ -105,8 +118,10 @@ void validMetrix(char *label) {
             exit(1);
         }
            
-    }
+    }   
 }
+//ValidationMathod takes all mathods in src and dist
+// and ensure each operand (src and dist) is validated
 int validationMathods(Instruction *inst) {
 
     int *extract_mathodsSrc = inst->opcode.validMathodsSrc;
@@ -213,7 +228,7 @@ int isMacro(char *word, FILE *file, char *line) {
     
     }
 
-
+//debug function show us each macro registered in the macro table
 void printMacroTable() {
     printf("\n==== MACRO TABLE (%d macros) ====\n", macrocounter);
     for (int i = 0; i < macrocounter; i++) {
@@ -226,6 +241,8 @@ void printMacroTable() {
         printf("----------------------\n");
     }
 }
+
+//debug function show us each Command Insturction in CI memory
 void printInstructionTable() {
     printf("\n==== CI MEMOY(%d used) ====\n", CI_index);
     for(int i = 0; i < CI_index; i++) {
@@ -256,7 +273,7 @@ void printInstructionTable() {
 
 }
 
-
+//debug function to show us each symbol in DC memory
 void printSymbolsTable() {
     printf("\n==== DC MEMOY(%d used) ====\n", DC_index);
     for(int i = 0; i < DC_index; i++) {

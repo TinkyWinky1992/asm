@@ -8,7 +8,8 @@
 #define MAX_TOKEN_SYMBOL 3
 
 
-
+//this function take a promat like printf function 
+//with the useage of args with format 
 void WirteToErrorFile(const char *format, ...) {
 
         FILE *fp = fopen("./bin/erorFile.ob", "wb");
@@ -27,7 +28,13 @@ void WirteToErrorFile(const char *format, ...) {
     fclose(fp);
 }
 
+//split instruction symbol get a line of symbol instruction and size integer 
+/*
+    input - the instruction symbol for example: m1: .data 5,2,3,4
+    it will split it to m1, .data, 5,2,3,4 -> label name, typeofsymbol, values
 
+    outSize- count the length of size for easy to use for later functions
+*/
 char **split_instruction_symbol(const char *input, int* outSize) {
     char** result = malloc(MAX_TOKEN_SYMBOL * sizeof(char*));
     *outSize = 0;
@@ -105,6 +112,12 @@ char **split_instruction_symbol(const char *input, int* outSize) {
 }
 
 
+
+//split instruction opcode get a line of opcode instruction
+/*
+    line - the instruction opcode for example: mov r1, r2
+    it will split it to mov, r1, r2 -> opcode name, operand 1, operand 2
+*/
 char **split_instruction_opcode(const char *line) {
     char **tokens = malloc(sizeof(char*) * (MAX_TOKENS + 1)); // +1 for NULL at end
     if (!tokens) return NULL;
@@ -187,7 +200,7 @@ void extractMcroName(char *line, char *macroName) {
 
 
 }
-
+//skipping label for more easy to parser the line.
 void skipping_label(char **line, const char *word) {
     char *ptr = *line;
 
@@ -218,6 +231,7 @@ void skipping_label(char **line, const char *word) {
     }
 }
 
+//help function take a string word like ".code" and return the enum of the symbol type 
 SymbolType getSymbolType(const char *typeStr) {
     if (strcmp(typeStr, ".code") == 0) {
         return SYMBOL_CODE;
@@ -236,7 +250,7 @@ SymbolType getSymbolType(const char *typeStr) {
 }
 
 
-
+//searching for any taken as a parameter symbol name if it exsists
 char *findSymbolname(char * var) {
     char * result;
     for(int j = 0; j < 5; j++) {
@@ -307,6 +321,8 @@ char *intToBinary(int num) {
 
     return output;
 }
+
+//fill the binray string with the amout of 0 requeired
 char *padTo10Bits(const char *binary) {
     size_t len = strlen(binary);
     if (len >= 10) {
@@ -328,6 +344,7 @@ char *padTo10Bits(const char *binary) {
     return padded;
 }
 
+//checking if string parameter is a operand
 int isOperandValid(char *var) {
     for (int i = 0; i < MAX_OPERAND; i++) {
         if (strcmp(var,operands_table[i].name ) == 0) {
@@ -337,12 +354,11 @@ int isOperandValid(char *var) {
     return 0; // Operand is not valid
 }
 
-
+//getteing the binary values 
 char *ExtractBinary(char *label, Operand temp) {
-    //printf("temp : %s %d %s\n ",temp.name, temp.value, temp.binary);
-    char *binary = NULL;
-    int found = 0;
-    int labelAddr = 0;
+    char *binary = NULL; //return binray string
+    int found = 0; //checking if it a lable then if it exsist in DC memory
+    int labelAddr = 0; // lable address if needed
     
         if(label != NULL && strlen(label) > 0) {
         // Search for the label in DC_memory
@@ -354,7 +370,7 @@ char *ExtractBinary(char *label, Operand temp) {
                 break;
             }
         }
-
+        //searching for any label jump point like "lable:"
         if(!found) {
             for (int i = 0; i < CI_index; i++) {
                 if (CI_memory[i].name != NULL && strcmp(CI_memory[i].name, label) == 0) {
@@ -399,10 +415,12 @@ char *ExtractBinary(char *label, Operand temp) {
 
 }
 
+//combine all the binary values in the instruction and add more bits if needed: 
+/*
 
+    add r1,r2 -> return the binary values togther as a string to post to the ob file
+*/
 char **ExtractBinaryValuesWithExtra(Instruction *p) {
-   // printf("name of opcode: %s\n", p->opcode.name);
-
     char *opcodeBin = strdup(p->opcode.binary);
     if (!opcodeBin) {
         perror("Failed to allocate opcode binary");

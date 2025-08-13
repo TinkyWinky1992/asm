@@ -5,15 +5,24 @@
 #include "../store/store.h"
 #include "../utils.h"
 
+/**
+ * Counts how many tokens exist in a NULL-terminated token array.
+ * 
+ * @param tokens - Array of strings (tokens), ending with NULL.
+ * @return Number of tokens in the array.
+ */
 int getTokenSize(char **tokens) {
-
     int counter = 0;
     while(tokens[counter] != NULL)
         counter++;
-
     return counter;
-
 }
+
+/**
+ * Frees all dynamically allocated memory inside an Instruction struct.
+ * 
+ * @param inst - Pointer to the Instruction to free.
+ */
 void freeInstruction(Instruction *inst) {
     if (!inst) return;
 
@@ -22,9 +31,17 @@ void freeInstruction(Instruction *inst) {
     if (inst->src_label) free(inst->src_label);
     if (inst->dist.name) free(inst->dist.name);
     if (inst->dist_label) free(inst->dist_label);
-    // free binary if dynamically allocated
+    // Note: Binary memory should be freed here if dynamically allocated.
 }
 
+/**
+ * Converts a tokenized assembly instruction into an Instruction struct.
+ * Handles labels, opcodes, operands, immediate values, and labels-as-operands.
+ * 
+ * @param tokens - Array of tokens (e.g. {"mov", "r1", "r2"}).
+ * @param tokenCount - Number of tokens.
+ * @return Pointer to a dynamically allocated Instruction, or NULL on failure.
+ */
 Instruction *parseTokensIntoInstruction(char **tokens, int tokenCount) {
     if (!tokens || tokenCount == 0) return NULL;
 
@@ -36,10 +53,10 @@ Instruction *parseTokensIntoInstruction(char **tokens, int tokenCount) {
 
     int currentIndex = 0;
 
-    // Check if first token is label (ends with ':')
+    // Check if first token is a label (ends with ':')
     if (tokens[0][strlen(tokens[0]) - 1] == ':') {
         size_t len = strlen(tokens[0]);
-        inst->name = malloc(len); // len - 1 + 1 for '\0'
+        inst->name = malloc(len); // Allocate for label without the colon
         if (!inst->name) {
             perror("malloc failed");
             free(inst);
@@ -47,15 +64,17 @@ Instruction *parseTokensIntoInstruction(char **tokens, int tokenCount) {
         }
         strncpy(inst->name, tokens[0], len - 1);
         inst->name[len - 1] = '\0';
-        currentIndex = 1;
+        currentIndex = 1; // Move past the label
     }
 
+    // Ensure we still have tokens left after a label
     if (currentIndex >= tokenCount) {
         freeInstruction(inst);
         free(inst);
         return NULL;
     }
 
+    // Find matching opcode in the opcode table
     char *opcodeStr = tokens[currentIndex++];
     int foundOpcode = 0;
     for (int i = 0; i < MAX_OPCODE; i++) {
@@ -66,22 +85,22 @@ Instruction *parseTokensIntoInstruction(char **tokens, int tokenCount) {
             break;
         }
     }
-    if (!foundOpcode) {
+    if (!foundOpcode) { // Invalid opcode
         freeInstruction(inst);
         free(inst);
         return NULL;
     }
 
-    // Parse src operand
+    // Parse source operand
     if (currentIndex < tokenCount) {
         char *src = tokens[currentIndex++];
-        if (src[0] == '#') {
+        if (src[0] == '#') { // Immediate number
             int value = atoi(src + 1);
             inst->src.name = strdup(src);
             inst->src.binary = intToBinary(value);
             inst->src.value = value;
             inst->src_label = NULL;
-        } else if (isOperandValid(src)) {
+        } else if (isOperandValid(src)) { // Known operand (register, etc.)
             for (int j = 0; j < MAX_OPERAND; j++) {
                 if (operands_table[j].name == NULL) break;
                 if (strcmp(src, operands_table[j].name) == 0) {
@@ -90,22 +109,22 @@ Instruction *parseTokensIntoInstruction(char **tokens, int tokenCount) {
                     break;
                 }
             }
-        } else {
+        } else { // Treat as label
             inst->src_label = strdup(src);
             inst->src.name = NULL;
         }
     }
 
-    // Parse dist operand
+    // Parse destination operand
     if (currentIndex < tokenCount) {
         char *dist = tokens[currentIndex++];
-        if (dist[0] == '#') {
+        if (dist[0] == '#') { // Immediate number
             int value = atoi(dist + 1);
             inst->dist.name = strdup(dist);
             inst->dist.binary = intToBinary(value);
             inst->dist.value = value;
             inst->dist_label = NULL;
-        } else if (isOperandValid(dist)) {
+        } else if (isOperandValid(dist)) { // Known operand
             for (int j = 0; j < MAX_OPERAND; j++) {
                 if (operands_table[j].name == NULL) break;
                 if (strcmp(dist, operands_table[j].name) == 0) {
@@ -114,7 +133,7 @@ Instruction *parseTokensIntoInstruction(char **tokens, int tokenCount) {
                     break;
                 }
             }
-        } else {
+        } else { // Label
             inst->dist_label = strdup(dist);
             inst->dist.name = NULL;
         }
@@ -123,40 +142,46 @@ Instruction *parseTokensIntoInstruction(char **tokens, int tokenCount) {
     return inst;
 }
 
+/**
+ * Parses and registers all lines inside a macro into Instruction structs.
+ * 
+ * @param mcro - Pointer to the macro to process.
+ */
 void RgisterMacroInstruction(Macro *mcro) {
     mcro->LineInst = malloc(mcro->lineCounter * sizeof(Instruction*));
-    Instruction *inst;
+
     printf("Data inside: %s\n", mcro->lines[0]);
-
-
-
 
     for(int i  = 0; i < mcro->lineCounter; i++) {
         char **tokens = split_instruction_opcode(mcro->lines[i]);
         if(!tokens || !tokens[0]){
-            printf("Erorr: failed to extract data from macro %s\n", mcro->name);
+            printf("Error: failed to extract data from macro %s\n", mcro->name);
             if(tokens) free(tokens);
             return;
-           
-
-
         }
+
         int len = getTokenSize(tokens);
-        mcro->LineInst[i] = parseTokensIntoInstruction(tokens,len);
+        mcro->LineInst[i] = parseTokensIntoInstruction(tokens, len);
         printf("checkinggg: %s", mcro->LineInst[i]->dist.name);
         printf("token checker: %s\n", tokens[0]);
     }
-
 }
+
+/**
+ * Reads and stores a macro from the source file into the macro table.
+ * Stops when "mcroend" is found.
+ * 
+ * @param file - Open file pointer.
+ * @param line - First line of the macro definition.
+ */
 void buildMacroTable(FILE *file, char *line) {
     char macroName[MAX_MACRO_NAME];
     extractMcroName(line, macroName);
 
-      // Initialize the macro
     Macro *macro = &macro_table[macrocounter];
     strncpy(macro->name, macroName, MAX_MACRO_NAME);
     macro->lineCounter = 0;
-    macro->capacity = 10; // Initial capacity for lines
+    macro->capacity = 10;
     macro->lines = malloc(macro->capacity * sizeof(char*));
     
     if (macro->lines == NULL) {        
@@ -164,7 +189,6 @@ void buildMacroTable(FILE *file, char *line) {
         return -1;
     }
     
-// Read lines into temporary buffer
     char buffer[1024];
     char **tempLines = malloc(10 * sizeof(char*));
     int tempCapacity = 10;
@@ -177,36 +201,32 @@ void buildMacroTable(FILE *file, char *line) {
 
     int foundEnd = 0;
 
+    // Read each line until "mcroend"
     while (fgets(buffer, sizeof(buffer), file)) {
-       // Remove trailing newline and convert to lowercase
         buffer[strcspn(buffer, "\n")] = '\0';
         toLowerCase(buffer);
 
-        //skipping comments
+        // Skip comments
         char *semicolon = strchr(buffer, ';');
         if (semicolon) *semicolon = '\0';
 
-        // Skip leading spaces
+        // Trim leading spaces
         char *trimmed = buffer;
         while (isspace(*trimmed)) trimmed++;
 
-        if (*trimmed == '\0') {
-            // Line is empty (only spaces or nothing), skip it
-            continue;
-        }
+        if (*trimmed == '\0') continue; // Skip empty lines
 
         if (strcmp(trimmed, "mcroend") == 0) {
             foundEnd = 1;
             break;
         }
 
-        // add line to temporary storage
+        // Expand storage if needed
         if (tempLineCount >= tempCapacity) {
             tempCapacity *= 2;
             char **newTemp = realloc(tempLines, tempCapacity * sizeof(char*));
             if (!newTemp) {
                 printf("Error: Memory reallocation failed.\n");
-                //clean all
                 for (int i = 0; i < tempLineCount; i++) free(tempLines[i]);
                 free(tempLines);
                 return -1;
@@ -224,7 +244,6 @@ void buildMacroTable(FILE *file, char *line) {
         return -1;
     }
 
-    // save macro if it exists
     macro->lines = tempLines;
     macro->lineCounter = tempLineCount;
     macro->capacity = tempCapacity;
@@ -232,15 +251,20 @@ void buildMacroTable(FILE *file, char *line) {
     RgisterMacroInstruction(macro);
     macrocounter++;
 
-
     printMacroTable();
 }
 
-
-
+/**
+ * Parses a symbol definition and stores it into the symbol table.
+ * Handles .entry, .extern, .data, .string, etc.
+ * 
+ * @param word - The first word of the line.
+ * @param file - Source file pointer.
+ * @param line - Full line text.
+ */
 void buildSymbolTable(char* word, FILE *file, char *line) {
     if(DC_index  + 1 > MAX_DC_INDEX) {
-        WirteToErrorFile("To many Macros DC Memory is full");
+        WirteToErrorFile("Too many Macros DC Memory is full");
         exit(1);
     }
 
@@ -252,42 +276,44 @@ void buildSymbolTable(char* word, FILE *file, char *line) {
     char *var2 = NULL;
     char *values = NULL;
 
-    //checking if it a symbol of extern or entry
+    // Check if it's an .extern or .entry directive
     if(strchr(Instruction_symbol_list[0], '.')) {
         var = findSymbolname(Instruction_symbol_list[0]);
         var2 = strdup(Instruction_symbol_list[1]);
     }
-        
-    else { //checkig if it a symbol of data mat string etc..
+    else { // Normal data/string definition
         var2 = findSymbolname(Instruction_symbol_list[1]);
         var = strdup(Instruction_symbol_list[0]);
     }
         
-    //checking for data inside the symbol
+    // Extract values if present
     if(Instruction_symbol_list[2] != NULL) 
         values = strdup(Instruction_symbol_list[2]);
-    
     else
         values = strdup("");
 
-    //free allocate memory
+    // Free token list
     for (int j = 0; j < len; j++) {
         free(Instruction_symbol_list[j]);
     }
     free(Instruction_symbol_list);
     
-    //change the order of passing data if it type of .entry or .extern
+    // Store symbol (argument order depends on type)
     if(strchr(var, '.'))
         StoreSymbol(var2, var, values, ptrline);
     else
         StoreSymbol(var, var2, values, ptrline);
-   // printf("instruction_symbol: %s\n", **Instruction_symbol_list);
 }
 
-
+/**
+ * Parses a command line and stores it into the command table.
+ * Handles opcodes, operands, immediate numbers, and label references.
+ * 
+ * @param word - First word of the line (could be a label).
+ * @param file - Source file pointer.
+ * @param line - Full text of the instruction line.
+ */
 void buildCommandTable(char* word, FILE *file, char *line) {
-    
-    //printf("is inside:?");
     char *ptrline = line;
     skipping_label(&ptrline, word);
 
@@ -297,8 +323,6 @@ void buildCommandTable(char* word, FILE *file, char *line) {
         return;
     }
 
-    
-    // Print each token
     int index_command = -1;
     int index_operand_src = -1;
     int index_opernad_dist = -1;
@@ -307,112 +331,82 @@ void buildCommandTable(char* word, FILE *file, char *line) {
     int i = 0;
     while(Instruction_list[i] != NULL){
         char *inst = Instruction_list[i];
-        //printf("index: %d\n", i);
+
+        // First token should match an opcode
         if(i == 0) {
             for(int j = 0; j < MAX_OPCODE; j++) {
-                //printf("[%s]\n", inst);
-                //printf("current command: %s\n", opcode_table[j].name);
-             
-                if(strcmp(inst,opcode_table[j].name ) == 0)
-                {
-
+                if(strcmp(inst,opcode_table[j].name ) == 0) {
                     index_command = j;
                     int isNeedOp = opcode_table[j].isOneOp;
                     if(isNeedOp == 1) {
-                        //printf("dist cant be use on the function");
-                        index_operand_src = -999; //not needed to use dist operand!
-                        
-
+                        index_operand_src = -999; // Single operand only
                     }
-                    
                     else if(opcode_table[j].isOneOp == 0) {
-                        //no needed to use two operands for the function!
-                        //printf("current command without operands: %d\n", opcode_table[j].isOneOp);
-                        index_operand_src = -999;
+                        index_operand_src = -999; // No operands
                         index_opernad_dist = -999;
-                    
                     }
-                    //printf("gasdgsd %d\n", index_opernad_dist);
                     break;
                 }
-
-
             }
         }   
 
-           // printf("%d, %d : %s\n", index_operand_src, index_opernad_dist, inst);
-            if((index_operand_src != -999 || index_opernad_dist != -999) && i > 0)
-            {
-                for (int j = 0; j < MAX_OPERAND; j++) {
-                    
-                    if (strcmp(inst, operands_table[j].name) == 0) {
-                        if (index_operand_src == -1)
-                            index_operand_src = j;
-                        else if(index_opernad_dist == -1)
-                            index_opernad_dist = j;
-                        break;
-                    }
-                    else if (*inst == '#') {
-                        if(i == 1) {
-                            if(index_operand_src == -999)
-                            {
-                                 index_opernad_dist = atoi(inst -1);
-                                 isnumber = 2;
-                            }
-                               
-                            else {
-                                index_operand_src = atoi(inst + 1);
-                                isnumber = 1;
-                            }
-
-                        }
-                        else if( i == 2) {
-                            index_opernad_dist = atoi(inst + 1);
+        // Process operands (register, number, label)
+        if((index_operand_src != -999 || index_opernad_dist != -999) && i > 0) {
+            for (int j = 0; j < MAX_OPERAND; j++) {
+                if (strcmp(inst, operands_table[j].name) == 0) {
+                    if (index_operand_src == -1)
+                        index_operand_src = j;
+                    else if(index_opernad_dist == -1)
+                        index_opernad_dist = j;
+                    break;
+                }
+                else if (*inst == '#') { // Immediate value
+                    if(i == 1) {
+                        if(index_operand_src == -999) {
+                            index_opernad_dist = atoi(inst -1);
                             isnumber = 2;
                         }
-
-                        break;
-
-                    }// when the value it a number and not operand or label like - #5
-                    else if (*inst != '\0' && isOperandValid(inst) == 0) {
-                        //printf("hisfafasf\n");
-                        if (i == 2)
-                            index_opernad_dist = -998;
-                        else if (i == 1)
-                            if(index_operand_src == -999)
-                                index_opernad_dist = -998;
-                            else
-                                index_operand_src = -998;
-                        break;
+                        else {
+                            index_operand_src = atoi(inst + 1);
+                            isnumber = 1;
+                        }
                     }
+                    else if( i == 2) {
+                        index_opernad_dist = atoi(inst + 1);
+                        isnumber = 2;
+                    }
+                    break;
+                }
+                // Operand is a label
+                else if (*inst != '\0' && isOperandValid(inst) == 0) {
+                    if (i == 2)
+                        index_opernad_dist = -998;
+                    else if (i == 1)
+                        if(index_operand_src == -999)
+                            index_opernad_dist = -998;
+                        else
+                            index_operand_src = -998;
+                    break;
                 }
             }
-
-          i++;
         }
+        i++;
+    }
 
-    // Free each token and the token array
-    
+    // Free token list
     int j = 0;
     while(Instruction_list[j] != NULL) {
         free(Instruction_list[j]);
         j++;
-        
     }
     free(Instruction_list);
-    //printf("command index: %d\n", index_command);
-    //printf("operand src index: %d\n", index_operand_src);
-    //printf("operand dist index: %d\n", index_opernad_dist);
-    if(index_command == -1 || index_operand_src == -1 || index_opernad_dist == -1)
-    {
+
+    // Validation
+    if(index_command == -1 || index_operand_src == -1 || index_opernad_dist == -1) {
         WirteToErrorFile("problem with the command of: %s\n", ptrline);
-        //printf("problem with the command of: %s\n", ptrline);
         exit(1);
         return;
-
-
     }
 
-   StoreCommands(index_command, index_operand_src, index_opernad_dist, line, isnumber);
-    
+    StoreCommands(index_command, index_operand_src, index_opernad_dist, line, isnumber);
 }
